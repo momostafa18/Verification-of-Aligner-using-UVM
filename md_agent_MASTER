@@ -1,0 +1,24 @@
+`ifndef MD_AGENT_MASTER_SV
+  `define MD_AGENT_MASTER_SV
+
+class md_agent_MASTER#(int unsigned DATA_WIDTH = 32) extends md_agent_base#(DATA_WIDTH, md_item_drv_MASTER) ;
+    
+  md_agent_config_MASTER#(DATA_WIDTH) agent_config_MASTER;
+  
+	`uvm_component_param_utils(md_agent_MASTER#(DATA_WIDTH))
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+      
+      md_agent_config_base#(DATA_WIDTH)::type_id::set_inst_override(md_agent_config_MASTER#(DATA_WIDTH)::get_type(),"agent_config",this);
+      
+      md_driver_base#(DATA_WIDTH,md_item_drv_MASTER)::type_id::set_inst_override(md_driver_master#(DATA_WIDTH)::get_type(),"driver",this);
+      
+      md_sequencer_base#(md_item_drv_MASTER)::type_id::set_inst_override(md_sequencer_MASTER#(DATA_WIDTH)::get_type(),"sequencer",this);
+      
+      
+    endfunction
+
+
+  endclass
+`endif	
