@@ -1,0 +1,46 @@
+`ifndef MD_SEQUENCE_SIMPLE_MASTER_SV
+  `define MD_SEQUENCE_SIMPLE_MASTER_SV
+
+  class md_sequence_simple_master extends md_sequence_base_master;
+    
+   rand md_item_drv_MASTER item;
+    
+    local int unsigned data_width;
+    
+   constraint item_hard {
+      item.data.size() > 0;
+      item.data.size() <= data_width / 8;
+      
+      item.offset      <  data_width / 8;
+      
+      item.data.size() + item.offset <= data_width / 8;
+    }
+
+    `uvm_object_utils(md_sequence_simple_master)
+    
+    function new(string name = "");
+      super.new(name);
+      
+      item = md_item_drv_MASTER::type_id::create("item");
+      
+      item.data_default.constraint_mode(0);
+      item.offset_default.constraint_mode(0);
+    endfunction
+    
+    function void pre_randomize();
+      data_width = p_sequencer.get_data_width() ;
+
+      endfunction
+
+  //Body Task
+  task body;
+     start_item(item);
+    
+	 finish_item(item);
+
+  endtask
+    
+    
+
+  endclass
+`endif	
