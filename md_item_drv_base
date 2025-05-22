@@ -1,0 +1,13 @@
+`ifndef MD_ITEM_DRIVE_BASE_SV
+  `define MD_ITEM_DRIVE_BASE_SV
+
+  class md_item_drv_base extends md_item_base;
+    
+	`uvm_object_utils(md_item_drv_base)
+    
+    function new(string name = "");
+      super.new(name);
+    endfunction
+    
+  endclass
+`endif	
