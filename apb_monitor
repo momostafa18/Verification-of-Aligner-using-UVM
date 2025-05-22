@@ -1,0 +1,93 @@
+`ifndef APB_MONITOR_SV
+  `define APB_MONITOR_SV
+
+class apb_monitor extends uvm_ext_monitor#(apb_vif,apb_item_mon);
+    
+    apb_item_mon item;
+  
+    apb_vif vif;
+    
+    apb_agent_config agent_config;
+       
+	`uvm_component_utils(apb_monitor)
+  
+  function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+        
+  endfunction
+  
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    
+    // Factory Creation
+    item = apb_item_mon::type_id::create("item");
+
+  endfunction
+   
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase); 
+         
+      if($cast(agent_config, super.agent_config) == 0) begin
+        `uvm_fatal("ALGORITHM_ISSUE", $sformatf("Could not cast %0s to %0s", 
+                                                super.agent_config.get_type_name(), apb_agent_config::type_id::type_name))
+      end
+    endfunction
+  
+ 
+  protected virtual task collect_transaction();
+
+      vif = agent_config.get_vif();
+
+      item.prev_item_delay = 0;
+      
+      while (vif.psel != 1) begin
+        
+        @(posedge vif.pclk);
+        item.prev_item_delay++;
+        
+      end
+      
+      item.addr   = vif.paddr;
+      item.dir    = apb_dir'(vif.pwrite);
+      item.length = 1;
+      
+      if(item.dir == APB_WRITE) begin
+        item.data = vif.pwdata;
+      end
+      
+      @(posedge vif.pclk);
+      item.length++;
+      
+      while(vif.pready !== 1) begin
+        @(posedge vif.pclk);
+        item.length++;
+        
+        if(agent_config.get_has_checks()) begin
+          
+          if(agent_config.get_stuck_thresholds <= item.length) begin
+            `uvm_error("PROTOCOL_ERROR", $sformatf("The APB transfer reached the stuck threshold value of %0d", item.length))
+          end
+          
+        end
+      end
+      
+      item.response = apb_response'(vif.pslverr);
+      
+      if(item.dir == APB_READ) begin
+        item.data = vif.prdata;
+      end
+      
+      output_port.write(item);
+      
+      @(posedge vif.pclk);
+      
+      `uvm_info("MONITOR", $sformatf("Monitor: addr= 0x%0h  data= 0x%0h  dir= %0s  prev_item_delay= %0d  length= %0d  response = %0s",
+                              item.addr, item.data,
+                              (item.dir == APB_WRITE ? "WRITE" : "READ"),
+                                item.prev_item_delay, item.length , item.response == APB_OKAY ? "OKAI" : "ERROR"), UVM_LOW)
+      
+  endtask
+
+  
+endclass
+`endif	
