@@ -1,0 +1,82 @@
+`ifndef MD_AGENT_CONFIG_BASE_SV
+  `define MD_AGENT_CONFIG_BASE_SV
+
+class md_agent_config_base#(int unsigned DATA_WIDTH = 32) extends uvm_ext_agent_config#(virtual md_if#(DATA_WIDTH)) ;
+
+    typedef virtual md_if#(DATA_WIDTH) md_vif;
+
+    time sample_delay_start_tr;
+  
+    int unsigned stuck_threshold;
+    
+       
+  `uvm_component_param_utils(md_agent_config_base#(DATA_WIDTH))
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+
+      stuck_threshold       = 1000      ;
+      sample_delay_start_tr = 1ns       ;
+    endfunction
+    
+
+
+    //Setter for the MD virtual interface
+    virtual function void set_vif(md_vif value);
+      super.set_vif(value);   
+      set_has_checks(get_has_checks());
+    endfunction
+
+    virtual function void set_has_checks(bit value);
+      super.set_has_checks(value);
+      if(vif != null  ) begin
+        vif.has_checks = has_checks;
+
+      end
+      endfunction
+    
+  
+  	virtual function bit get_sample_delay_start_tr();
+      return sample_delay_start_tr;
+    endfunction
+    
+    virtual function void set_sample_delay_start_tr(bit value);
+      sample_delay_start_tr = value;
+
+      endfunction
+  
+  	virtual function int unsigned get_stuck_thresholds();
+      return stuck_threshold;
+    endfunction
+    
+    virtual function void set_stuck_thresholds(int unsigned value);
+      
+     stuck_threshold = value;
+
+    endfunction
+
+  	virtual task run_phase(uvm_phase phase);
+      forever begin
+        @(vif.has_checks);
+        
+        if(vif.has_checks != get_has_checks()) begin
+          `uvm_error("ALGORITHM_ISSUE", $sformatf("Can not change \"has_checks\" from MD interface directly - use %0s.set_has_checks()", get_full_name()))
+        end
+      end
+    endtask
+  
+	virtual task wait_reset_start();
+      if(vif.preset_n !== 0) begin
+         @(negedge vif.preset_n);
+      end
+    endtask
+         
+     virtual task wait_reset_end();
+      if(vif.preset_n == 0) begin
+        @(posedge vif.preset_n);
+      end
+    endtask
+
+
+  endclass
+`endif	
