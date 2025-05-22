@@ -1,0 +1,167 @@
+`ifndef MD_COVERAGE_SV
+  `define MD_COVERAGE_SV
+
+class md_coverage#(int unsigned DATA_WIDTH = 32) extends uvm_ext_coverage#(virtual md_if#(DATA_WIDTH),md_item_mon);
+  
+  typedef virtual md_if#(DATA_WIDTH) md_vif;
+    
+  md_vif vif ;
+  
+  md_item_mon    item;
+  
+  md_agent_config_base#(DATA_WIDTH) agent_config;
+
+  `uvm_component_param_utils(md_coverage#(DATA_WIDTH))
+  
+
+  covergroup CG with function sample(md_item_mon item);
+	  option.per_instance = 1;
+    
+    offset : coverpoint item.offset {
+      option.comment = "Offset of the md access";
+      bins values[]  = {[0:(DATA_WIDTH/8)-1]}; 
+    }
+    
+    size : coverpoint item.data.size {
+      option.comment = "Size of the md access";
+      bins values[]  = {[1:(DATA_WIDTH/8)]}; 
+    }
+    
+    response : coverpoint item.response {
+      option.comment = "Response of the md access";
+    }
+    
+    length : coverpoint item.length {
+      option.comment = "Length of the md access";
+      bins length_eq_2    = {1};
+      bins length_le_10[] = {[2:10]};
+      bins length_gt_10   = {[11:$]};
+      
+      illegal_bins length_lt_2 = {0};
+
+    }
+    
+    prev_item_delay : coverpoint item.prev_item_delay {
+      option.comment = "Delay, in clock cycles, between two consecutive md accesses";
+      bins back2back       = {0};
+      bins delay_le_5[5]   = {[1:5]};
+      bins delay_gt_5      = {[6:$]};
+    }
+    
+    offset_x_size : cross size , offset {
+        ignore_bins ignore_offset_plus_size_gt_data_width = offset_x_size with (size + offset > (DATA_WIDTH / 8));
+      }
+
+    endgroup
+
+  covergroup cover_index_DATA_0 with function sample(int unsigned value_0);
+      option.per_instance = 1;
+      
+      index : coverpoint value_0 {
+        option.comment = "DATA Index";
+        bins values[DATA_WIDTH] = {[0:DATA_WIDTH-1]};
+      }
+        endgroup
+  
+  covergroup cover_index_DATA_1 with function sample(int unsigned value_1);
+      option.per_instance = 1;
+      
+      index : coverpoint value_1 {
+        option.comment = "DATA Index";
+        bins values[DATA_WIDTH] = {[0:DATA_WIDTH-1]};
+      }
+      endgroup
+  
+  covergroup cover_reset with function sample(bit valid);
+      option.per_instance = 1;
+      
+      access_ongoing : coverpoint valid {
+        option.comment = "An md access was ongoing at reset";
+      }
+      endgroup
+  
+  function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+    CG                         = new();
+    cover_index_DATA_1    	   = new();
+    cover_index_DATA_0    	   = new();
+	cover_reset                = new();
+
+
+    endfunction
+  
+  
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+     
+    item         = md_item_mon::type_id::create("item",this);
+    vif 	     = agent_config.get_vif();
+
+    CG.set_inst_name($sformatf("%s_%s", get_full_name(), "CG"));
+      
+    cover_index_DATA_0.set_inst_name($sformatf("%s_%s", get_full_name(), "cover_index_DATA_0"));
+    cover_index_DATA_1.set_inst_name($sformatf("%s_%s", get_full_name(), "cover_index_DATA_1"));
+    cover_reset.set_inst_name($sformatf("%s_cover_reset", get_full_name())); 
+
+  endfunction
+  
+  
+  function void write(md_item_mon t);
+    item = t ;
+    CG.sample(t);
+    
+    for(int i = 0; i < DATA_WIDTH; i++) begin
+      if(item.data[i]) begin
+          cover_index_DATA_1.sample(i);
+        end
+        else begin
+          cover_index_DATA_0.sample(i);
+        end
+      end
+ endfunction
+  
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase); 
+         
+      if($cast(agent_config, super.agent_config) == 0) begin
+        `uvm_fatal("ALGORITHM_ISSUE", $sformatf("Could not cast %0s to %0s", 
+                                                super.agent_config.get_type_name(), md_agent_config_base#(DATA_WIDTH)::type_id::type_name))
+      end
+    endfunction
+  
+  virtual function void handle_reset(uvm_phase phase);
+     
+    vif = agent_config.get_vif();
+
+    cover_reset.sample(agent_config.vif.valid);
+    endfunction
+  
+  
+  
+    virtual function string coverage2string();
+      string result = {
+        $sformatf("\n   CG:         		%03.2f%%", CG.get_inst_coverage()),
+        $sformatf("\n      offset:          %03.2f%%", CG.offset.get_inst_coverage()),
+        $sformatf("\n      size:            %03.2f%%", CG.size.get_inst_coverage()),
+        $sformatf("\n      response:        %03.2f%%", CG.response.get_inst_coverage()),
+        $sformatf("\n      length:          %03.2f%%", CG.length.get_inst_coverage()),
+        $sformatf("\n      prev_item_delay: %03.2f%%", CG.prev_item_delay.get_inst_coverage()),
+        $sformatf("\n      offset_x_size:   %03.2f%%", CG.offset_x_size.get_inst_coverage()),
+        $sformatf("\n                                    "),
+        $sformatf("\n   cover_reset:        %03.2f%%", cover_reset.get_inst_coverage()),
+        $sformatf("\n      access_ongoing:  %03.2f%%", cover_reset.access_ongoing.get_inst_coverage())
+      };
+  return result;
+    endfunction
+  
+  virtual function void report_phase(uvm_phase phase);
+      super.report_phase(phase);
+      
+      //IMPORTANT: DON'T DO THIS IN A REAL PROJECT!!!
+      `uvm_info("DEBUG", $sformatf("Coverage: %0s", coverage2string()), UVM_NONE)
+    endfunction
+  
+endclass
+
+
+`endif
