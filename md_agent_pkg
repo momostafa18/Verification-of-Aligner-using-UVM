@@ -1,0 +1,49 @@
+`ifndef MD_AGENT_PKG_SV
+  `define MD_AGENT_PKG_SV
+
+	`include "uvm_macros.svh"
+ 	`include "uvm_ext_pkg.sv"
+    `include "md_intf.sv"
+
+	 package md_agent_pkg;
+	 import uvm_pkg::*;
+     import uvm_ext_pkg::*;
+
+	 `include "md_agent_types.sv"
+	 `include "md_reset_handler.sv"
+	 `include "md_item_base.sv"
+     `include "md_item_drv_base.sv"
+     `include "md_item_drv_MASTER.sv"
+     `include "md_item_drv_SLAVE.sv"
+	 `include "md_item_monitor.sv"
+     `include "md_agent_config_base.sv"
+	 `include "md_agent_config_MASTER.sv"
+     `include "md_agent_config_SLAVE.sv"
+     `include "md_sequencer_base.sv"
+     `include "md_sequencer_base_master.sv"
+     `include "md_sequencer_base_slave.sv"
+     `include "md_sequencer_MASTER.sv"
+     `include "md_sequencer_SLAVE.sv"
+     `include "md_driver_base.sv"
+     `include "md_driver_MASTER.sv"
+     `include "md_driver_SLAVE.sv"
+	 `include "md_monitor.sv"
+	 `include "md_coverage.sv"
+     `include "md_agent_base.sv"
+     `include "md_agent_MASTER.sv"
+     `include "md_agent_SLAVE.sv"
+     `include "md_sequence_base.sv"
+     `include "md_sequence_base_master.sv"
+     `include "md_sequence_base_slave.sv"
+     `include "md_sequence_simple_master.sv"
+     `include "md_sequence_random_master.sv"
+     `include "md_sequence_simple_slave.sv"
+     `include "md_sequence_slave_response.sv"
+     `include "md_sequence_slave_response_forever.sv"
+
+
+
+
+	 endpackage
+
+`endif
