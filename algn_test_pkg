@@ -1,0 +1,25 @@
+`ifndef ALGN_TEST_PKG_SV
+  `define ALGN_TEST_PKG_SV
+
+
+	`include "uvm_macros.svh"
+	`include "algn_pkg.sv"
+
+
+	package algn_test_pkg;
+
+      import uvm_pkg::*;
+      import algn_env_pkg::*;
+	  import apb_agent_pkg::*;
+	  import md_agent_pkg::*;
+
+
+      `include "algn_test_defines.sv"
+      `include "algn_test_base.sv"
+	  `include "algn_reg_access_test.sv"
+	  `include "md_algn_test_random.sv"
+
+    endpackage
+
+
+`endif
