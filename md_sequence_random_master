@@ -1,0 +1,17 @@
+`ifndef MD_SEQUENCE_RANDOM_MASTER_SV
+  `define MD_SEQUENCE_RANDOM_MASTER_SV
+
+class md_sequence_random_master extends md_sequence_base_master;
+
+    `uvm_object_utils(md_sequence_random_master)
+    
+    function new(string name = "");
+      super.new(name);
+    endfunction
+    
+    
+    
+    
+
+  endclass
+`endif	
