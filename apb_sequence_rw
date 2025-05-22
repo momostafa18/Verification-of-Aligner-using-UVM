@@ -1,0 +1,46 @@
+`ifndef APB_SEQUENCE_RW_SV
+  `define APB_SEQUENCE_RW_SV
+
+  class apb_sequence_rw extends apb_sequence_base;
+    
+    rand apb_address addr ;
+    
+    rand apb_data    data ;
+    
+    `uvm_object_utils(apb_sequence_rw)
+    
+    function new(string name = "");
+      super.new(name);
+    endfunction
+    
+
+  //Body Task
+  task body;
+
+	apb_item_drv item;
+    
+     start_item(item);
+    void'(item.randomize() with {
+         dir  == APB_READ ;
+         addr == local::addr ;
+         
+    });
+	 finish_item(item);
+
+    start_item(item);
+    void'(item.randomize() with {
+         dir  == APB_WRITE ;
+         addr == local::addr ;
+         data == local::data ;
+
+
+    });
+
+	 finish_item(item);
+
+  endtask
+    
+    
+
+  endclass
+`endif	
