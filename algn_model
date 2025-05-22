@@ -1,0 +1,54 @@
+`ifndef ALGN_MODEL_SV
+  `define ALGN_MODEL_SV
+
+  class algn_model extends uvm_component implements uvm_ext_reset_handler;
+    
+    //Register block
+    algn_reg_block reg_block;
+    
+    algn_env_config env_config;
+    
+    algn_clr_cnt_drop cb;
+    
+    `uvm_component_utils(algn_model)
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);  
+    endfunction
+    
+    virtual function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      
+      if(reg_block == null) begin
+        reg_block = algn_reg_block::type_id::create("reg_block", this);
+        
+        reg_block.build();
+        reg_block.lock_model();
+      end
+    endfunction
+    
+    virtual function void connect_phase(uvm_phase phase);
+      
+      cb = algn_clr_cnt_drop::type_id::create("cb", this);
+      
+      super.connect_phase(phase);
+
+      cb.cnt_drop = reg_block.STATUS_REG.CNT_DROP ; 
+      
+      uvm_callbacks#( uvm_reg_field , algn_clr_cnt_drop)::add(reg_block.CTRL_REG.CLR , cb);
+    endfunction
+    
+    virtual function void handle_reset(uvm_phase phase);
+      
+      reg_block.reset("HARD");
+    endfunction
+    
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase);
+      
+      reg_block.CTRL_REG.SET_ALGN_DATA_WIDTH(env_config.get_algn_data_width());
+    endfunction
+    
+  endclass
+
+`endif
