@@ -15,6 +15,8 @@ The verification environment is designed to be modular, reusable, and scalable, 
 The repository is organized into several directories and files, each serving a specific purpose in the verification environment:
 
 - **`apb_agent/`**: Contains the APB agent components, including driver, monitor, sequencer, and configuration files.
+- **`md_agent_master/`**: Implements the master agent for the MD interface (e.g., TX or RX sender). Contains sequencer, driver, monitor, and configuration logic specific to master-side operation.
+- **`md_agent_slave/`**: Implements the slave agent for the MD interface (e.g., RX receiver). Reuses base components with custom behavior suitable for slave-side response logic.
 - **`algn_env/`**: Defines the top-level environment, integrating all agents, scoreboards, and coverage collectors.
 - **`algn_reg_block/`**: Implements the UVM Register Abstraction Layer (RAL) for the Aligner's registers.
 - **`algn_test_pkg/`**: Houses various test cases and sequences to validate different functionalities of the Aligner.
