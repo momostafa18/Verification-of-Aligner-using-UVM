@@ -1,0 +1,23 @@
+`ifndef MD_DRIVER_BASE_SV
+  `define MD_DRIVER_BASE_SV
+
+class md_driver_base #(int unsigned DATA_WIDTH = 32,type REQ = md_item_drv_base) extends uvm_ext_driver#(virtual md_if#(DATA_WIDTH),REQ) ;
+
+  	md_agent_config_base#(DATA_WIDTH) agent_config;    
+  
+  `uvm_component_param_utils(md_driver_base#(DATA_WIDTH,REQ))
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+    endfunction
+  
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase); 
+         
+      if($cast(agent_config, super.agent_config) == 0) begin
+        `uvm_fatal("ALGORITHM_ISSUE", $sformatf("Could not cast %0s to %0s", 
+                                                super.agent_config.get_type_name(), md_agent_config_base#(DATA_WIDTH)::type_id::type_name))
+      end
+    endfunction
+  endclass
+`endif	
