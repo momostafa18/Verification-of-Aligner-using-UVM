@@ -1,0 +1,103 @@
+`ifndef ALGN_ENV_SV
+  `define ALGN_ENV_SV
+
+class algn_env#(int unsigned ALGN_DATA_WIDTH = 32) extends uvm_env implements uvm_ext_reset_handler;
+
+    algn_env_config								env_config;
+
+    apb_agent 	     	  			   			agent_1 ;
+    
+  	md_agent_MASTER#(ALGN_DATA_WIDTH)  			agent_MASTER ;	
+    
+  	md_agent_SLAVE#(ALGN_DATA_WIDTH)   			agent_SLAVE ;	
+    
+    md_agent_config_SLAVE#(ALGN_DATA_WIDTH) 	agent_config_slave;
+    
+    algn_model                                  model;
+   
+    algn_reg_predictor#(apb_item_mon) 			predictor;
+  
+    
+    `uvm_component_param_utils(algn_env#(ALGN_DATA_WIDTH))
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+	endfunction
+    
+	virtual function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+           
+      env_config = algn_env_config::type_id::create("env_config", this);
+      
+      env_config.set_has_checks(1);
+      
+      env_config.set_algn_data_width(ALGN_DATA_WIDTH);
+      
+      agent_config_slave = md_agent_config_SLAVE#(ALGN_DATA_WIDTH)::type_id::create("agent_config_slave", this);
+
+      agent_1 = apb_agent::type_id::create("agent_1",this);
+      
+      agent_MASTER = md_agent_MASTER#(ALGN_DATA_WIDTH)::type_id::create("agent_MASTER",this);
+
+      agent_config_slave.set_stuck_thresholds(100);
+
+      uvm_config_db#(uvm_ext_pkg::uvm_ext_agent_config#(.VIRTUAL_INTF(virtual md_if#(ALGN_DATA_WIDTH))))::set(this, "agent_SLAVE", "agent_config", agent_config_slave);
+
+      agent_SLAVE  = md_agent_SLAVE#(ALGN_DATA_WIDTH) ::type_id::create("agent_SLAVE",this);
+
+      model  	   = algn_model ::type_id::create("model",this);
+      
+      predictor    = algn_reg_predictor#(apb_item_mon)::type_id::create("predictor", this);
+
+	endfunction
+    
+    virtual function void connect_phase(uvm_phase phase);
+ 		apb_reg_adapter adapter =apb_reg_adapter::type_id::create("adapter",this);
+        
+        super.connect_phase(phase);
+
+      	predictor.map = model.reg_block.default_map;
+        
+        predictor.adapter = adapter;
+
+        agent_1.monitor.output_port.connect(predictor.bus_in);
+        
+        //Connect the APB sequencer to the address map in order
+        //to use the API of the registers to start APB transactions
+        model.reg_block.default_map.set_sequencer(agent_1.sequencer, adapter);
+
+        predictor.env_config = env_config;
+
+        model.env_config     = env_config;
+
+    endfunction
+  
+ 	 
+  protected virtual task wait_reset_start();
+      
+    agent_1.agent_config.wait_reset_start();
+  endtask
+         
+   
+  protected virtual task wait_reset_end();
+      
+    agent_1.agent_config.wait_reset_end();
+  endtask
+  
+  virtual function void handle_reset(uvm_phase phase);
+      
+    model.handle_reset(phase);
+  endfunction
+    
+      
+  virtual task run_phase(uvm_phase phase);
+      
+    forever begin  
+      wait_reset_start();
+      handle_reset(phase); 
+      wait_reset_end(); 
+    end 
+  endtask  
+    
+  endclass
+`endif	
