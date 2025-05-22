@@ -1,0 +1,30 @@
+`ifndef MD_SEQUENCE_SLAVE_RESPONSE_SV
+  `define MD_SEQUENCE_SLAVE_RESPONSE_SV
+
+  class md_sequence_slave_response extends md_sequence_base_slave;
+    
+    md_item_mon item_mon;
+    
+    md_sequence_simple_slave seq;
+    
+   `uvm_object_utils(md_sequence_slave_response)
+    
+    function new(string name = "");
+      super.new(name);     
+    endfunction
+
+  //Body Task
+  task body;
+    
+     p_sequencer.pending_items.get(item_mon);
+
+    `uvm_do_with(seq, { 
+    
+    })
+
+  endtask
+    
+    
+
+  endclass
+`endif	
