@@ -1,0 +1,241 @@
+`ifndef APB_COVERAGE_SV
+  `define APB_COVERAGE_SV
+
+
+	
+class apb_coverage extends uvm_ext_coverage#(apb_vif,apb_item_mon);
+     
+  local apb_vif vif;
+
+   apb_item_mon    item;
+  
+   apb_agent_config agent_config;
+
+   `uvm_component_utils(apb_coverage)
+
+  covergroup CG with function sample(apb_item_mon item);
+	  option.per_instance = 1;
+    
+    direction : coverpoint item.dir {
+      option.comment = "Direction of the APB access";
+    }
+    
+    response : coverpoint item.response {
+      option.comment = "Response of the APB access";
+    }
+    
+    length : coverpoint item.length {
+      option.comment = "Length of the APB access";
+      bins length_eq_2    = {2};
+      bins length_le_10[] = {[3:10]};
+      bins length_gt_10   = {[11:$]};
+      
+      illegal_bins length_lt_2 = {[$:1]};
+
+    }
+    
+    prev_item_delay : coverpoint item.prev_item_delay {
+      option.comment = "Delay, in clock cycles, between two consecutive APB accesses";
+      bins back2back       = {0};
+      bins delay_le_5[5]   = {[1:5]};
+      bins delay_gt_5      = {[6:$]};
+    }
+    
+    response_x_direction : cross item.dir , item.response ;
+    
+    transition_CG : coverpoint item.dir {
+      option.comment = "Transitions of APB direction";
+      bins direction_trans[] = (APB_READ, APB_WRITE => APB_READ, APB_WRITE);
+    }
+    
+    endgroup
+  
+  covergroup cover_index_ADDRESS_0 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "ADDRESS Index";
+        bins values[`APB_MAX_ADDR_WIDTH] = {[0:`APB_MAX_ADDR_WIDTH-1]};
+      }
+    endgroup
+  
+    covergroup cover_index_ADDRESS_1 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "ADDRESS Index";
+        bins values[`APB_MAX_ADDR_WIDTH] = {[0:`APB_MAX_ADDR_WIDTH-1]};
+      }
+      endgroup
+    
+  covergroup cover_index_WRITE_DATA_0 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "DATA Index";
+        bins values[`APB_MAX_DATA_WIDTH] = {[0:`APB_MAX_DATA_WIDTH-1]};
+      }
+    endgroup
+  
+    covergroup cover_index_WRITE_DATA_1 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "DATA Index";
+        bins values[`APB_MAX_DATA_WIDTH] = {[0:`APB_MAX_DATA_WIDTH-1]};
+      }
+      endgroup
+      covergroup cover_index_READ_DATA_0 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "DATA Index";
+        bins values[`APB_MAX_DATA_WIDTH] = {[0:`APB_MAX_DATA_WIDTH-1]};
+      }
+        endgroup
+  
+    covergroup cover_index_READ_DATA_1 with function sample(int unsigned value);
+      option.per_instance = 1;
+      
+      index : coverpoint value {
+        option.comment = "DATA Index";
+        bins values[`APB_MAX_DATA_WIDTH] = {[0:`APB_MAX_DATA_WIDTH-1]};
+      }
+      endgroup
+  
+    covergroup cover_reset with function sample(bit psel);
+      option.per_instance = 1;
+      
+      access_ongoing : coverpoint psel {
+        option.comment = "An APB access was ongoing at reset";
+      }
+      endgroup
+
+  function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+      CG = new();
+    cover_index_ADDRESS_0 = new();
+    cover_index_ADDRESS_1 = new();
+    cover_index_WRITE_DATA_0 = new();
+    cover_index_WRITE_DATA_1 = new();
+    cover_index_READ_DATA_1 = new();
+    cover_index_READ_DATA_0 = new();
+	cover_reset = new();
+
+    
+    endfunction
+  
+  
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+     
+    item         = apb_item_mon::type_id::create("item",this);
+
+    CG.set_inst_name($sformatf("%s_%s", get_full_name(), "CG"));
+    
+    cover_index_ADDRESS_0.set_inst_name($sformatf("%s_%s", get_full_name(), "Address 0"));
+    cover_index_ADDRESS_1.set_inst_name($sformatf("%s_%s", get_full_name(), "Address 1"));
+
+    cover_index_READ_DATA_1.set_inst_name($sformatf("%s_%s", get_full_name(), "Read Data 0"));
+    cover_index_READ_DATA_0.set_inst_name($sformatf("%s_%s", get_full_name(), "Read Data 1"));
+    
+    cover_index_WRITE_DATA_0.set_inst_name($sformatf("%s_%s", get_full_name(), "Write Data 0"));
+    cover_index_WRITE_DATA_1.set_inst_name($sformatf("%s_%s", get_full_name(), "Write Data 1"));
+
+
+  endfunction
+  
+
+  function void write(apb_item_mon t);
+    item = t ;
+    CG.sample(t);
+    
+    for(int i = 0; i < `APB_MAX_ADDR_WIDTH; i++) begin
+        if(item.addr[i]) begin
+          cover_index_ADDRESS_1.sample(i);
+        end
+        else begin
+          cover_index_ADDRESS_0.sample(i);
+        end
+      end
+      
+      for(int i = 0; i < `APB_MAX_DATA_WIDTH; i++) begin
+        case(item.dir)
+          APB_WRITE : begin
+            if(item.data[i]) begin
+              cover_index_WRITE_DATA_1.sample(i);
+            end
+            else begin
+              cover_index_WRITE_DATA_0.sample(i);
+            end
+          end
+          APB_READ : begin
+            if(item.data[i]) begin
+              cover_index_READ_DATA_1.sample(i);
+            end
+            else begin
+              cover_index_READ_DATA_0.sample(i);
+            end
+          end
+          default : begin
+            `uvm_error("ALGORITHM_ISSUE", $sformatf("Current version of the code does not support item.dir: %0s", item.dir.name()))
+          end
+        endcase
+      end
+
+  endfunction
+  
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+      super.end_of_elaboration_phase(phase); 
+         
+      if($cast(agent_config, super.agent_config) == 0) begin
+        `uvm_fatal("ALGORITHM_ISSUE", $sformatf("Could not cast %0s to %0s", 
+                                                super.agent_config.get_type_name(), apb_agent_config::type_id::type_name))
+      end
+    endfunction
+  
+  virtual function void handle_reset(uvm_phase phase);
+    vif = agent_config.get_vif();
+
+    cover_reset.sample(agent_config.vif.psel);
+    endfunction
+  
+  
+  
+    virtual function string coverage2string();
+      string result = {
+        $sformatf("\n      cover_item:              	       %03.2f%%", CG.get_inst_coverage()),
+        $sformatf("\n      direction:                       %03.2f%%", CG.direction.get_inst_coverage()),
+        $sformatf("\n      trans_direction:                 %03.2f%%", CG.transition_CG.get_inst_coverage()),
+        $sformatf("\n      response:                        %03.2f%%", CG.response.get_inst_coverage()),
+        $sformatf("\n      response_x_direction:            %03.2f%%", CG.response_x_direction.get_inst_coverage()),
+        $sformatf("\n      length:                          %03.2f%%", CG.length.get_inst_coverage()),
+        $sformatf("\n      prev_item_delay:                 %03.2f%%", CG.prev_item_delay.get_inst_coverage()),
+        $sformatf("\n                                                                                          "),
+        $sformatf("\n      Address Bits equal to '0':       %03.2f%%", cover_index_ADDRESS_0.get_inst_coverage()),
+        $sformatf("\n      Address Bits equal to '1':       %03.2f%%", cover_index_ADDRESS_1.get_inst_coverage()),
+        $sformatf("\n      Write Data Bits equal to '0':    %03.2f%%", cover_index_WRITE_DATA_0.get_inst_coverage()),
+        $sformatf("\n      Write Data Bits equal to '1':    %03.2f%%", cover_index_WRITE_DATA_1.get_inst_coverage()),
+        $sformatf("\n      Read Data Bits equal to '0':     %03.2f%%", cover_index_READ_DATA_0.get_inst_coverage()),
+        $sformatf("\n      Read Data Bits equal to '1':     %03.2f%%", cover_index_READ_DATA_1.get_inst_coverage()),
+        $sformatf("\n      cover_reset:                     %03.2f%%", cover_reset.get_inst_coverage()),
+        $sformatf("\n      access_ongoing:                  %03.2f%%", cover_reset.access_ongoing.get_inst_coverage())
+        
+
+      };
+  return result;
+    endfunction
+  
+    virtual function void report_phase(uvm_phase phase);
+      super.report_phase(phase);
+      
+      //IMPORTANT: DON'T DO THIS IN A REAL PROJECT!!!
+      `uvm_info("DEBUG", $sformatf("Coverage: %0s", coverage2string()), UVM_NONE)
+    
+  endfunction
+  
+  
+endclass
+
+
+`endif	
