@@ -1,0 +1,70 @@
+`ifndef APB_AGENT_CONFIG_SV
+  `define APB_AGENT_CONFIG_SV
+
+class apb_agent_config extends uvm_ext_agent_config#(apb_vif);
+        
+    int unsigned stuck_threshold;
+       
+	`uvm_component_utils(apb_agent_config)
+    
+    function new(string name = "", uvm_component parent);
+      super.new(name, parent);
+      
+      stuck_threshold = 1000      ;
+    endfunction
+    
+
+    //Setter for the MD virtual interface
+    virtual function void set_vif(apb_vif value);
+       super.set_vif(value);
+       set_has_checks(get_has_checks());
+    endfunction
+
+
+    virtual function void set_has_checks(bit value);
+	  super.set_has_checks(value);      
+      if(vif != null ) begin
+        vif.has_checks = has_checks;
+      end
+      endfunction
+
+    virtual function int unsigned get_stuck_thresholds();
+      return stuck_threshold;
+    endfunction
+    
+    virtual function void set_stuck_thresholds(int unsigned value);
+      
+      if(value <= 2) begin
+        `uvm_error("ALGORITHM_ISSUE", $sformatf("Tried to set stuck_threshold to value %d but the minimum length of an APB transfer is 2", value))
+      end
+      
+      stuck_threshold = value;
+
+    endfunction
+    
+	
+    virtual task run_phase(uvm_phase phase);
+      forever begin
+        @(vif.has_checks);
+        
+        if(vif.has_checks != get_has_checks()) begin
+          `uvm_error("ALGORITHM_ISSUE", $sformatf("Can not change \"has_checks\" from APB interface directly - use %0s.set_has_checks()", get_full_name()))
+        end
+      end
+    endtask
+
+     virtual task wait_reset_start();
+      if(vif.preset_n !== 0) begin
+            @(negedge vif.preset_n);
+      end
+    endtask
+         
+    //Task for waiting the reset to be finished
+     virtual task wait_reset_end();
+      if(vif.preset_n == 0) begin
+        	@(posedge vif.preset_n);
+      end
+    endtask
+  
+  endclass
+`endif	
