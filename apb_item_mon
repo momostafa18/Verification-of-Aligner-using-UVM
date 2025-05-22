@@ -1,0 +1,19 @@
+`ifndef APB_ITEM_Monitoring_SV
+  `define APB_ITEM_Monitoring_SV
+
+  class apb_item_mon extends apb_item_base;
+    
+    int unsigned prev_item_delay;
+    
+    int unsigned length;
+    
+    apb_response response;
+
+	`uvm_object_utils(apb_item_mon)
+    
+    function new(string name = "");
+      super.new(name);
+    endfunction
+    
+  endclass
+`endif	
