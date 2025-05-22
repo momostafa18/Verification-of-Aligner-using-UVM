@@ -1,0 +1,31 @@
+`ifndef ALGN_ENV_PKG_SV
+  `define ALGN__ENV_PKG_SV
+
+
+	`include "uvm_macros.svh"
+	
+	`include "uvm_ext_pkg.sv"
+	`include "apb_agent_pkg.sv"
+	`include "md_agent_pkg.sv"
+	`include "algn_reg_pkg.sv"
+
+	package algn_env_pkg;
+      import uvm_pkg::*;
+      import uvm_ext_pkg::*;
+	  import apb_agent_pkg::*;
+	  import md_agent_pkg::*;
+	  import algn_reg_pkg::*;
+    	
+	  `include "algn_env_config.sv"
+      `include "algn_clr_cnt_drop.sv"
+	  `include "algn_model.sv"
+      `include "algn_reg_access_status_info.sv"
+	  `include "algn_reg_predictor.sv"
+      `include "algn_env.sv"
+
+    `include "algn_seq_reg_config.sv"
+
+    endpackage
+
+
+`endif
