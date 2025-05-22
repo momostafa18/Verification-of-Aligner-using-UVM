@@ -1,0 +1,76 @@
+`ifndef ALGN_REGISTER_BLOCK
+	`define ALGN_REGISTER_BLOCK
+
+class algn_reg_block extends uvm_reg_block;
+  
+  rand algn_reg_ctrl   CTRL_REG;
+  
+  rand algn_reg_status STATUS_REG;
+  
+  rand algn_reg_irqen  INTER_REQ_EN_REG;
+  
+  rand algn_reg_irq    INTER_REQ_REG;
+  
+  `uvm_object_utils(algn_reg_block)
+
+  function new(name = "");
+  	super.new(.name(name), .has_coverage(UVM_NO_COVERAGE));
+  endfunction
+  
+  virtual function void build();
+    
+    default_map = create_map(.name(           "apb_map"),
+        						  .base_addr(      'h0000),
+       							  .n_bytes(        4),
+      							  .endian(         UVM_LITTLE_ENDIAN),
+      							  .byte_addressing(1));
+                                  
+    default_map.set_check_on_read(1); 
+                                  
+                                  
+            
+    CTRL_REG = algn_reg_ctrl::type_id::create("CTRL_REG", null, get_full_name());    
+     
+    CTRL_REG.configure(this);
+	
+    CTRL_REG.build();
+
+    default_map.add_reg(CTRL_REG, 'h0000, "RW");                             
+                                  
+           
+                                  
+    
+    STATUS_REG = algn_reg_status::type_id::create("STATUS_REG", null, get_full_name());
+                                  
+    STATUS_REG.configure(this);
+
+    STATUS_REG.build();
+
+    default_map.add_reg(STATUS_REG, 'h000C, "RO");    
+   
+                                  
+                                  
+    INTER_REQ_EN_REG = algn_reg_irqen::type_id::create("INTER_REQ_EN_REG", null, get_full_name());    
+    
+    INTER_REQ_EN_REG.configure(this);
+
+    INTER_REQ_EN_REG.build();
+
+    default_map.add_reg(INTER_REQ_EN_REG, 'h00F0, "RW");        
+                                  
+                                  
+                                  
+                                  
+    INTER_REQ_REG = algn_reg_irq::type_id::create("INTER_REQ_REG", null, get_full_name());    
+
+    INTER_REQ_REG.configure(this);
+	
+    INTER_REQ_REG.build();
+
+    default_map.add_reg(INTER_REQ_REG, 'h00F4, "RW");   
+
+  endfunction
+
+endclass
+
+`endif
